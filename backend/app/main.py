@@ -9,7 +9,7 @@ app = FastAPI(title="Enterprise RAG SaaS", version="1.0.0")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Set to frontend URL in production
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

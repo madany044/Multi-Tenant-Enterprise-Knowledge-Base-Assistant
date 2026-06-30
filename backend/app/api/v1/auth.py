@@ -39,10 +39,27 @@ async def signup(req: SignupRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == req.email))
-    user = result.scalars().first()
+    # Get user with tenant
+    result = await db.execute(
+        select(User).where(User.email == req.email)
+    )
+    user = result.scalar_one_or_none()
+    
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_access_token({"sub": str(user.id), "tenant_id": str(user.tenant_id), "role": user.role})
-    return {"access_token": token, "refresh_token": token, "token_type": "bearer"}
+    # Create tokens with tenant_id
+    token_data = {
+        "sub": str(user.id),
+        "tenant_id": str(user.tenant_id),
+        "role": user.role
+    }
+    
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+    
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
